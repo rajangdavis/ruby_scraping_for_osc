@@ -34,7 +34,7 @@ answer_id_array = [
 {'a_id'=>2326,'ab_a_id'=>140},
 {'a_id'=>2327,'ab_a_id'=>140},
 {'a_id'=>2328,'ab_a_id'=>140},
-# {'a_id'=>2329,'ab_a_id'=>140},
+{'a_id'=>2329,'ab_a_id'=>140},
 {'a_id'=>2330,'ab_a_id'=>140},
 {'a_id'=>2356,'ab_a_id'=>140},
 {'a_id'=>2357,'ab_a_id'=>140},
@@ -161,7 +161,8 @@ answer_id_array = [
 {'a_id'=> 2835,'ab_a_id'=>79},
 {'a_id'=> 2836,'ab_a_id'=>76},
 {'a_id'=> 2837,'ab_a_id'=>76},
-{'a_id'=> 2838,'ab_a_id'=>79}]
+{'a_id'=> 2838,'ab_a_id'=>79}
+]
 
 automation_key = ENV['ANSWER_AUTOMATION']
 
@@ -195,6 +196,7 @@ answer_id_array.each do |answer|
     end
     
     doc.search('.modal-body,.modal-footer').each do |node|
+      puts node
       firmware_popup.push(node)
     end
 
