@@ -1,42 +1,62 @@
-# http://ruby-doc.org/stdlib-2.0.0/libdoc/open-uri/rdoc/OpenURI.html 
 require 'open-uri'
-# https://github.com/flori/json
 require 'json'
+require 'net/http'
+require 'uri'
 
-puts "What is the name of the interface you want to extract fields from?"
+puts "What is the name of the OSC interface you want to extract fields from?"
 
 interface = gets.chomp 
 
-# get https://qseecode.herokuapp.com/qsee_rn_array.json
-request_uri = 'https://' + interface+ '.custhelp.com/cc/custom_fields/fields'
+puts "What is the name of the Zendesk subdomain you want to import fields to?"
 
-# Actually fetch the contents of the remote URL as a String.
+zendesk = gets.chomp 
+
+request_uri = 'https://' + interface + '.custhelp.com/cc/custom_fields/fields'
+
+tickets_uri = 'https://' + zendesk + '.zendesk.com/api/v2/ticket_fields.json'
+
+users_uri = 'https://' + zendesk + '.zendesk.com/api/v2/user_fields.json'
+
+final_tickets_uri = URI.parse(tickets_uri)
+
+final_users_uri = URI.parse(users_uri)
+
 buffer = open(request_uri).read
 
 results = JSON.parse(buffer)
 
-# loop through the results
-
 ticket_fields = results['Ticket Fields']
 
-ticket_fields.each do |tf|
+ticket_fields.each_with_index do |tf,i|
+	request = Net::HTTP::Post.new(final_tickets_uri)
+	request.basic_auth(ENV['ZENDESK_ADMIN'], ENV['ZENDESK_PASSWORD'])
+	request.content_type = "application/json"
+	request.body = JSON.dump(tf)
 
-	puts JSON.pretty_generate(tf['ticket_field'])
-
+	response = Net::HTTP.start(final_tickets_uri.hostname, final_tickets_uri.port, use_ssl: final_tickets_uri.scheme == "https") do |http|
+	  http.request(request)
+	end
+	
+	puts response.body
 end
 
 puts "finished ticket fields"
 
 user_fields = results['User Fields']
 
-user_fields.each do |uf|
+user_fields.each_with_index do |uf,i|
+	request = Net::HTTP::Post.new(final_users_uri)
+	request.basic_auth(ENV['ZENDESK_ADMIN'], ENV['ZENDESK_PASSWORD'])
+	request.content_type = "application/json"
+	request.body = JSON.dump(uf)
 
-	puts JSON.pretty_generate(uf['user_field'])
-
+	response = Net::HTTP.start(final_users_uri.hostname, final_users_uri.port, use_ssl: final_users_uri.scheme == "https") do |http|
+	  http.request(request)
+	end
+	
+	puts response.body
 end
 
 puts "finished user fields"
 
-# done
-
-puts "done"
+puts "done adding custom user and ticket fields"
