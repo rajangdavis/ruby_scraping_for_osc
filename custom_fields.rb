@@ -12,6 +12,22 @@ def valid_json?(json)
   end
 end
 
+def post_to_zendesk_api(final_users_uri,field)
+
+	request = Net::HTTP::Post.new(final_users_uri)
+	request.basic_auth(ENV['ZENDESK_ADMIN'], ENV['ZENDESK_PASSWORD'])
+	request.content_type = "application/json"
+	request.body = JSON.dump(field)
+
+	response = Net::HTTP.start(final_users_uri.hostname, final_users_uri.port, use_ssl: final_users_uri.scheme == "https") do |http|
+	  http.request(request)
+	end
+	
+	puts response.body
+	puts
+
+end
+
 def find_all_or_one(interface,zendesk)
 
 	puts "Would you like to get all custom Incident and Contact fields?(y/n)"
@@ -126,17 +142,6 @@ def get_custom_field(interface,zendesk,table,name)
 		puts buffer
 		puts
 	end
-	# request = Net::HTTP::Post.new(final_users_uri)
-	# request.basic_auth(ENV['ZENDESK_ADMIN'], ENV['ZENDESK_PASSWORD'])
-	# request.content_type = "application/json"
-	# request.body = JSON.dump(uf)
-
-	# response = Net::HTTP.start(final_users_uri.hostname, final_users_uri.port, use_ssl: final_users_uri.scheme == "https") do |http|
-	#   http.request(request)
-	# end
-	
-	# puts response.body
-	# puts
 
 end
 
