@@ -12,19 +12,39 @@ def valid_json?(json)
   end
 end
 
-def post_to_zendesk_api(final_users_uri,field)
+def post_to_zendesk_api(uri,field)
 
-	request = Net::HTTP::Post.new(final_users_uri)
+	puts "POSTing to the "+uri+" URI"
+
+	final_uri = URI.parse(uri)
+
+	request = Net::HTTP::Post.new(final_uri)
 	request.basic_auth(ENV['ZENDESK_ADMIN'], ENV['ZENDESK_PASSWORD'])
 	request.content_type = "application/json"
 	request.body = JSON.dump(field)
 
-	response = Net::HTTP.start(final_users_uri.hostname, final_users_uri.port, use_ssl: final_users_uri.scheme == "https") do |http|
+	response = Net::HTTP.start(final_uri.hostname, final_uri.port, use_ssl: final_uri.scheme == "https") do |http|
 	  http.request(request)
 	end
 	
 	puts response.body
 	puts
+
+end
+
+def get_field_details(interface,zendesk)
+
+	puts "Which table is your custom field part of? (Currently only supporting Incident and Contact tables from Oracle Service Cloud)"
+	puts
+
+	get_table = gets.chomp
+
+	puts "What is the name of the field from the "+ get_table +" table?"
+	puts
+
+	get_field_name = gets.chomp
+
+	get_custom_field(interface,zendesk,get_table,get_field_name)
 
 end
 
@@ -35,21 +55,11 @@ def find_all_or_one(interface,zendesk)
 
 	get_fields = gets.chomp
 
-	if get_fields.match(/y/)
+	if get_fields.downcase === "y"
 		get_custom_fields(interface,zendesk)
-	elsif get_fields.match(/n/)
+	elsif get_fields.downcase === "n"
 		
-		puts "Which table is your custom field part of? (Currently only supporting Incident and Contact tables from Oracle Service Cloud)"
-		puts
-
-		get_table = gets.chomp
-
-		puts "What is the name of the field from the "+ get_table +" table?"
-		puts
-
-		get_field_name = gets.chomp
-
-		get_custom_field(interface,zendesk,get_table,get_field_name)
+		get_field_details(interface,zendesk)		
 
 	else
 		puts 'Sorry, please type "y" for yes and "n" for no'
@@ -78,17 +88,9 @@ def get_custom_fields(interface,zendesk)
 	ticket_fields = results['Ticket Fields']
 
 	ticket_fields.each_with_index do |tf,i|
-		request = Net::HTTP::Post.new(final_tickets_uri)
-		request.basic_auth(ENV['ZENDESK_ADMIN'], ENV['ZENDESK_PASSWORD'])
-		request.content_type = "application/json"
-		request.body = JSON.dump(tf)
 
-		response = Net::HTTP.start(final_tickets_uri.hostname, final_tickets_uri.port, use_ssl: final_tickets_uri.scheme == "https") do |http|
-		  http.request(request)
-		end
-		
-		puts response.body
-		puts
+		post_to_zendesk_api(final_tickets_uri,tf)
+
 	end
 
 	puts "finished ticket fields"
@@ -97,17 +99,9 @@ def get_custom_fields(interface,zendesk)
 	user_fields = results['User Fields']
 
 	user_fields.each_with_index do |uf,i|
-		request = Net::HTTP::Post.new(final_users_uri)
-		request.basic_auth(ENV['ZENDESK_ADMIN'], ENV['ZENDESK_PASSWORD'])
-		request.content_type = "application/json"
-		request.body = JSON.dump(uf)
-
-		response = Net::HTTP.start(final_users_uri.hostname, final_users_uri.port, use_ssl: final_users_uri.scheme == "https") do |http|
-		  http.request(request)
-		end
 		
-		puts response.body
-		puts
+		post_to_zendesk_api(final_users_uri,tf)
+
 	end
 
 	puts "finished user fields"
@@ -118,26 +112,47 @@ def get_custom_fields(interface,zendesk)
 
 end
 
+def get_zendesk_uri(zendesk,table)
+
+	table = table.downcase
+
+	if table ==="incident"
+
+		return 'https://' + zendesk + '.zendesk.com/api/v2/ticket_fields.json'
+		
+	elsif table ==="contact"
+	
+		return 'https://' + zendesk + '.zendesk.com/api/v2/user_fields.json'
+
+	else
+
+		puts "The specified table not supported" 
+		abort("Invalid table: " + table)
+	
+	end
+
+end
+
 def get_custom_field(interface,zendesk,table,name)
 
-	request_uri = 'https://' + interface + '.custhelp.com/cc/custom_fields/field?field_table='+ table + '&field_name=' + name
+	osc_request_uri = 'https://' + interface + '.custhelp.com/cc/custom_fields/field?field_table='+ table + '&field_name=' + name
 
-	# tickets_uri = 'https://' + zendesk + '.zendesk.com/api/v2/ticket_fields.json'
+	zendesk_uri = get_zendesk_uri(zendesk,table)
 
-	# users_uri = 'https://' + zendesk + '.zendesk.com/api/v2/user_fields.json'
+	buffer = open(osc_request_uri).read
 
-	# final_tickets_uri = URI.parse(tickets_uri)
-
-	# final_users_uri = URI.parse(users_uri)
-
-	buffer = open(request_uri).read
+	field_type = table.downcase == "incident" ? "ticket_field" : "user_field"
 
 	if valid_json?(buffer)
 
 		results = JSON.parse(buffer)
 
-		puts JSON.pretty_generate(results)
-		puts
+		field_json = {}
+
+		field_json[field_type] = results
+
+		post_to_zendesk_api(zendesk_uri,field_json)
+
 	else
 		puts buffer
 		puts
