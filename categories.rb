@@ -40,8 +40,6 @@ def get_categories(interface,zendesk)
 
 	categories_uri = 'https://' + zendesk + '.zendesk.com/api/v2/help_center/categories.json'
 
-	final_categories_uri = URI.parse(categories_uri)
-
 	buffer = open(request_uri).read
 
 	results = JSON.parse(buffer)
@@ -49,19 +47,20 @@ def get_categories(interface,zendesk)
 	results.each do |cat|
 
 		if cat['sc_parent_id'] == nil
-			
-			# TODO
-			# 1. create an object
-			# 2. set the locale hash to 'en-us'
-			# 3. set name hash to cat['sc_name']
-			# 4. post JSON data to categories creation URL
 
-			puts cat['sc_name']
+			category = {}
+			category['locale'] = 'en-us'
+			category['name'] = cat['sc_name']
+
+			category_final = {}
+			category_final['category'] = category
+			
+			post_to_zendesk_api(categories_uri,category_final)
 
 		else
 
 			# TODO
-			# 1. create a method for retrieving categories by name
+			# 1. create a method for retrieving categories by name from zendesk
 				# parse the object that is fetched into some format where I can return the category ID
 				# set to variable
 			# 2. create an object
@@ -70,18 +69,12 @@ def get_categories(interface,zendesk)
 			# 5. post JSON data to sections creation URL
 
 			puts 'this is a level 2 category:' + cat['sc_name']
+			puts 'My parent is :' + cat['sc_parent_name']
+			puts
 		
 		end
 
 	end
-
-	# ticket_fields = results['Ticket Fields']
-
-	# ticket_fields.each_with_index do |tf,i|
-
-	# 	post_to_zendesk_api(final_categories_uri,tf)
-
-	# end
 
 end
 
