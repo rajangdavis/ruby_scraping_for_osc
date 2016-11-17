@@ -91,7 +91,7 @@ automation_key = ENV['ANSWER_AUTOMATION']
 
 answer_id_array.each do |answer|
 
-	formatted_url = URI.encode("https://qsee--tst1.custhelp.com/cc/answers/updateJapaneseAnswers?automation_key=#{automation_key}")
+	formatted_url = URI.encode("https://qsee.custhelp.com/cc/answers/updateJapaneseAnswers?automation_key=#{automation_key}")
 
 	puts formatted_url
 

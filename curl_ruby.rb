@@ -33,7 +33,7 @@ results.each do |result|
 
 	automation_key = ENV['ANSWER_AUTOMATION']
 	
-	formatted_url = URI.encode("https://qsee--tst1.custhelp.com/cc/answers/update_answer?automation_key=#{automation_key}")
+	formatted_url = URI.encode("https://qsee.custhelp.com/cc/answers/update_answer?automation_key=#{automation_key}")
 
 	post_uri = URI.parse(formatted_url)
 
